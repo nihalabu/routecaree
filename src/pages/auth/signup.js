@@ -39,7 +39,7 @@ export default function SignUp() {
 
     try {
       await register(formData.email, formData.password, formData.name);
-      router.push('/auth/register'); // Redirect to complete profile
+      router.push('/auth/select-roles'); // Redirect to complete profile
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         setError('Email already in use. Please login instead.');
