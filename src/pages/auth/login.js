@@ -17,11 +17,8 @@ export default function Login() {
 
     try {
       await login(email, password);
-      // Don't show success message, just let the redirect happen
     } catch (err) {
       console.error('Login error:', err);
-      
-      // Show user-friendly error messages
       if (err.code === 'auth/user-not-found') {
         setError('No account found with this email. Please sign up first.');
       } else if (err.code === 'auth/wrong-password') {
@@ -39,149 +36,134 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gray-50 font-sans">
       {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-white">
-        <div className="max-w-md w-full space-y-8">
-          {/* Logo */}
-          <div>
-            <h2 className="text-4xl font-extrabold text-gray-900">
+      <div className="flex-1 flex items-center justify-center px-6 lg:px-20 xl:px-24 bg-white shadow-2xl z-10">
+        <div className="max-w-md w-full">
+          <div className="text-center lg:text-left">
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
               Welcome back
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link href="/auth/signup" className="font-medium text-indigo-600 hover:text-indigo-500 transition">
-                Sign up for free
+            <p className="mt-3 text-gray-500 text-lg">
+              New to Route Care?{' '}
+              <Link href="/auth/signup" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors underline underline-offset-4">
+                Create an account
               </Link>
             </p>
           </div>
 
-          {/* Error Message */}
           {error && (
-            <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800">{error}</p>
-                </div>
-              </div>
+            <div className="mt-6 rounded-xl bg-red-50 p-4 border border-red-100 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm font-medium text-red-800">{error}</p>
             </div>
           )}
 
-          {/* Form */}
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email address
+                <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-1.5">
+                  Email Address
                 </label>
                 <input
                   id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  placeholder="Enter your email"
+                  className="input-field" // Using the class defined in globals.css
+                  placeholder="name@company.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">
                   Password
                 </label>
                 <input
                   id="password"
-                  name="password"
                   type="password"
-                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  placeholder="Enter your password"
+                  className="input-field" // Using the class defined in globals.css
+                  placeholder="••••••••"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
+              <label className="flex items-center cursor-pointer group">
                 <input
-                  id="remember-me"
-                  name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition cursor-pointer"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
-              </div>
+                <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Remember me</span>
+              </label>
 
-              <div className="text-sm">
-                <Link href="/auth/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 transition">
-                  Forgot password?
-                </Link>
-              </div>
+              <Link href="/auth/forgot-password" hidden className="text-sm font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                Forgot password?
+              </Link>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary flex items-center justify-center gap-2" // Using class from globals.css
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                'Sign in to Dashboard'
+              )}
+            </button>
           </form>
         </div>
       </div>
 
-      {/* Right Side - Image/Design */}
-      <div className="hidden lg:block relative w-0 flex-1">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
-          <div className="absolute inset-0 bg-black opacity-20"></div>
-          <div className="relative h-full flex items-center justify-center px-12">
-            <div className="text-center text-white">
-              <h1 className="text-5xl font-extrabold mb-6">Route Care</h1>
-              <p className="text-2xl font-light mb-8">Guardian Homes System</p>
-              <p className="text-lg opacity-90 max-w-md mx-auto">
-                Remotely manage your homes, properties, and take care of your elderly parents living in your hometown.
-              </p>
-              <div className="mt-12 grid grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="text-4xl font-bold">100+</div>
-                  <div className="text-sm opacity-80 mt-1">Active Users</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold">50+</div>
-                  <div className="text-sm opacity-80 mt-1">Caretakers</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold">500+</div>
-                  <div className="text-sm opacity-80 mt-1">Services Done</div>
-                </div>
-              </div>
-            </div>
+      {/* Right Side - Branding Overlay */}
+      <div className="hidden lg:flex relative w-0 flex-1 bg-slate-900">
+        <div className="absolute inset-0 z-0 opacity-40">
+           {/* You can put a high-quality background image or pattern here */}
+           <div className="absolute inset-0 bg-gradient-to-br from-blue-700 to-indigo-900" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center w-full px-20 text-white">
+          <div className="bg-blue-500/20 p-4 rounded-2xl backdrop-blur-md mb-8">
+             <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+             </svg>
+          </div>
+          <h1 className="text-5xl font-black mb-4 tracking-tight">Route Care</h1>
+          <p className="text-xl font-medium text-blue-100 mb-8 text-center max-w-md leading-relaxed">
+            Connecting NRIs with trusted home management and elderly care professionals.
+          </p>
+          
+          <div className="grid grid-cols-3 gap-12 border-t border-white/20 pt-10 mt-2">
+            <StatBlock count="100+" label="Active Users" />
+            <StatBlock count="50+" label="Caretakers" />
+            <StatBlock count="500+" label="Tasks Done" />
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Simple internal component for the branding stats
+function StatBlock({ count, label }) {
+  return (
+    <div className="text-center">
+      <div className="text-3xl font-bold text-white">{count}</div>
+      <div className="text-xs font-semibold uppercase tracking-widest text-blue-200 mt-1">{label}</div>
     </div>
   );
 }

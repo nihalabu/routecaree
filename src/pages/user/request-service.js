@@ -4,8 +4,9 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-export default function RequestService() {
+function RequestServiceContent() {
   const router = useRouter();
   const { serviceId } = router.query;
   const { user } = useAuth();
@@ -31,20 +32,15 @@ export default function RequestService() {
 
   const fetchData = async () => {
     try {
-      // Get user data
       const userQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
       const userSnapshot = await getDocs(userQuery);
       
       if (!userSnapshot.empty) {
         const userInfo = userSnapshot.docs[0].data();
         setUserData(userInfo);
-        setFormData(prev => ({
-          ...prev,
-          serviceAddress: userInfo.profile.propertyAddress
-        }));
+        setFormData(prev => ({ ...prev, serviceAddress: userInfo.profile.propertyAddress }));
         
-        // Get caretaker data
-        if (userInfo.linkedCaretakers && userInfo.linkedCaretakers.length > 0) {
+        if (userInfo.linkedCaretakers?.length > 0) {
           const caretakerQuery = query(
             collection(db, 'caretakers'),
             where('caretakerId', '==', userInfo.linkedCaretakers[0])
@@ -54,40 +50,19 @@ export default function RequestService() {
           if (!caretakerSnapshot.empty) {
             const caretakerInfo = caretakerSnapshot.docs[0].data();
             setCaretakerData(caretakerInfo);
-            
-            // Find the selected service
             const service = caretakerInfo.servicesOffered.find(s => s.id === serviceId);
             setSelectedService(service);
           }
         }
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      alert('Failed to load service details');
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateRequestId = () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
-    let id = 'REQ_';
-    for (let i = 0; i < 3; i++) {
-      id += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    for (let i = 0; i < 3; i++) {
-      id += numbers.charAt(Math.floor(Math.random() * numbers.length));
-    }
-    return id;
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const generateRequestId = () => `REQ-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,247 +71,155 @@ export default function RequestService() {
     try {
       const requestData = {
         requestId: generateRequestId(),
-        
-        // User Info
         userId: user.uid,
         userName: userData.profile.name,
         userEmail: userData.profile.email,
         userPhone: userData.profile.phone,
-        
-        // Caretaker Info
         caretakerId: caretakerData.caretakerId,
         caretakerUserId: caretakerData.userId,
         caretakerName: caretakerData.profile.name,
-        
-        // Service Info
         serviceId: selectedService.id,
         serviceName: selectedService.serviceName,
         serviceCategory: selectedService.category,
         servicePrice: selectedService.price,
-        
-        // Request Details
         serviceAddress: formData.serviceAddress,
         scheduledDate: formData.scheduledDate,
         scheduledTime: formData.scheduledTime,
         specialRequirements: formData.specialRequirements,
-        
-        // Status
         status: 'pending',
-        statusHistory: [
-          {
-            status: 'pending',
-            timestamp: new Date().toISOString(),
-            note: 'Service requested by user'
-          }
-        ],
-        
-        // Communication
-        messages: [],
-        
-        // Proof and Completion
-        proofOfWork: [],
-        workDescription: '',
-        completionNotes: '',
-        completedAt: null,
-        
-        // Payment
-        payment: {
-          amount: selectedService.price,
-          status: 'pending',
-          method: '',
-          paidAt: null
-        },
-        
-        // Rating
-        rating: 0,
-        review: '',
-        reviewedAt: null,
-        
+        payment: { amount: selectedService.price, status: 'pending' },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
       await addDoc(collection(db, 'serviceRequests'), requestData);
-      
-      alert('Service request submitted successfully!');
-      router.push('/user');
+      router.push('/user?booking=success');
     } catch (error) {
-      console.error('Error creating request:', error);
-      alert('Failed to submit request. Please try again.');
+      alert('Submission failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  if (!selectedService) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Service not found</p>
-          <button onClick={() => router.push('/user')} className="px-4 py-2 bg-indigo-600 text-white rounded">
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse">Initializing Request...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="mb-6">
-            <button
-              onClick={() => router.push('/user')}
-              className="text-indigo-600 hover:text-indigo-800 flex items-center text-sm mb-4"
-            >
-              ← Back to Dashboard
-            </button>
-            <h1 className="text-3xl font-bold text-gray-900">Request Service</h1>
-            <p className="text-gray-600 mt-2">Fill in the details to request this service</p>
+    <div className="min-h-screen bg-[#F8FAFC] py-12">
+      <div className="max-w-4xl mx-auto px-6">
+        
+        {/* Breadcrumb */}
+        <button onClick={() => router.back()} className="group flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition mb-8 font-black text-xs uppercase tracking-widest">
+          <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Services
+        </button>
+
+        <div className="grid lg:grid-cols-5 gap-10">
+          
+          {/* Main Form Area */}
+          <div className="lg:col-span-3 space-y-6">
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/50">
+              <h1 className="text-3xl font-black text-slate-900 mb-2">Schedule Service</h1>
+              <p className="text-slate-500 mb-10 font-medium">Coordinate with your caretaker for the perfect time.</p>
+
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preferred Date</label>
+                    <input 
+                      type="date" 
+                      required 
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold"
+                      value={formData.scheduledDate}
+                      onChange={(e) => setFormData({...formData, scheduledDate: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Arrival Time</label>
+                    <select 
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold appearance-none"
+                      value={formData.scheduledTime}
+                      onChange={(e) => setFormData({...formData, scheduledTime: e.target.value})}
+                    >
+                      {["08:00 AM", "10:00 AM", "12:00 PM", "02:00 PM", "04:00 PM"].map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Property Address</label>
+                  <textarea 
+                    required 
+                    rows="3"
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold"
+                    value={formData.serviceAddress}
+                    onChange={(e) => setFormData({...formData, serviceAddress: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Instructions for Caretaker</label>
+                  <textarea 
+                    rows="4"
+                    placeholder="e.g. Please check the garden pipes as well..."
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold"
+                    value={formData.specialRequirements}
+                    onChange={(e) => setFormData({...formData, specialRequirements: e.target.value})}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all disabled:opacity-50"
+                >
+                  {submitting ? "Sending Request..." : "Confirm Booking"}
+                </button>
+              </form>
+            </div>
           </div>
 
-          {/* Service Details */}
-          <div className="mb-8 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-            <div className="flex items-start gap-4">
-              {selectedService.image && (
-                <img 
-                  src={selectedService.image} 
-                  alt={selectedService.serviceName}
-                  className="w-24 h-24 object-cover rounded"
-                />
-              )}
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold text-gray-900">{selectedService.serviceName}</h2>
-                <p className="text-sm text-gray-600 mb-2">{selectedService.description}</p>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold text-indigo-600">₹{selectedService.price}</span>
-                  <span className="text-sm text-gray-500">{selectedService.duration}</span>
+          {/* Service Summary Sidebar */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-indigo-900 rounded-[2.5rem] p-8 text-white sticky top-12 overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+              
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-300 mb-8">Summary</h3>
+              
+              <div className="space-y-6 relative z-10">
+                <div>
+                  <h4 className="text-2xl font-black mb-1">{selectedService?.serviceName}</h4>
+                  <span className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase border border-white/10 italic">
+                    {selectedService?.category.replace('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="pt-6 border-t border-white/10 flex justify-between items-end">
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-indigo-300 mb-1">Total Cost</p>
+                    <p className="text-4xl font-black">₹{selectedService?.price}</p>
+                  </div>
+                  <p className="text-sm font-bold opacity-60 italic">{selectedService?.duration}</p>
+                </div>
+
+                <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+                   <p className="text-[10px] font-black uppercase text-indigo-300 mb-2">Service Provider</p>
+                   <p className="font-bold text-lg">{caretakerData?.profile?.name}</p>
+                   <p className="text-xs opacity-60 font-medium">Expertise: {caretakerData?.profile?.experience}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Caretaker Info */}
-          <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold mb-2">Caretaker Details</h3>
-            <p className="text-sm text-gray-600"><strong>Name:</strong> {caretakerData.profile.name}</p>
-            <p className="text-sm text-gray-600"><strong>Phone:</strong> {caretakerData.profile.phone}</p>
-            <p className="text-sm text-gray-600"><strong>Service Area:</strong> {caretakerData.profile.serviceArea}</p>
-          </div>
-
-          {/* Request Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Scheduled Date *
-                </label>
-                <input
-                  type="date"
-                  name="scheduledDate"
-                  required
-                  value={formData.scheduledDate}
-                  onChange={handleChange}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Preferred Time *
-                </label>
-                <select
-                  name="scheduledTime"
-                  required
-                  value={formData.scheduledTime}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="08:00">08:00 AM</option>
-                  <option value="09:00">09:00 AM</option>
-                  <option value="10:00">10:00 AM</option>
-                  <option value="11:00">11:00 AM</option>
-                  <option value="12:00">12:00 PM</option>
-                  <option value="13:00">01:00 PM</option>
-                  <option value="14:00">02:00 PM</option>
-                  <option value="15:00">03:00 PM</option>
-                  <option value="16:00">04:00 PM</option>
-                  <option value="17:00">05:00 PM</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Service Address *
-              </label>
-              <textarea
-                name="serviceAddress"
-                required
-                value={formData.serviceAddress}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Enter the address where service is needed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Special Requirements (Optional)
-              </label>
-              <textarea
-                name="specialRequirements"
-                value={formData.specialRequirements}
-                onChange={handleChange}
-                rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Any specific instructions or requirements for the caretaker..."
-              />
-            </div>
-
-            {/* Summary */}
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h3 className="font-semibold mb-2">Request Summary</h3>
-              <div className="space-y-1 text-sm">
-                <p><strong>Service:</strong> {selectedService.serviceName}</p>
-                <p><strong>Price:</strong> ₹{selectedService.price}</p>
-                <p><strong>Duration:</strong> {selectedService.duration}</p>
-                {formData.scheduledDate && (
-                  <p><strong>Date:</strong> {new Date(formData.scheduledDate).toLocaleDateString()} at {formData.scheduledTime}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => router.push('/user')}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Submitting...' : 'Submit Request'}
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RequestService() {
+  return (
+    <ProtectedRoute allowedRoles={['user']}>
+      <RequestServiceContent />
+    </ProtectedRoute>
   );
 }

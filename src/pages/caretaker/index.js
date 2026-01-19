@@ -24,10 +24,8 @@ function CaretakerDashboard() {
     try {
       const q = query(collection(db, 'caretakers'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
-      
       if (!snapshot.empty) {
-        const data = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
-        setCaretakerData(data);
+        setCaretakerData({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() });
       }
     } catch (error) {
       console.error('Error fetching caretaker data:', error);
@@ -36,41 +34,19 @@ function CaretakerDashboard() {
 
   const fetchServiceRequests = async () => {
     try {
-      const q = query(
-        collection(db, 'serviceRequests'),
-        where('caretakerUserId', '==', user.uid)
-      );
+      const q = query(collection(db, 'serviceRequests'), where('caretakerUserId', '==', user.uid));
       const snapshot = await getDocs(q);
-      
-      const requests = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
+      const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
       setServiceRequests(requests);
     } catch (error) {
-      console.error('Error fetching service requests:', error);
+      console.error('Error fetching requests:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      in_progress: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    return badges[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const filteredRequests = serviceRequests.filter(request => {
-    if (filter === 'all') return true;
-    return request.status === filter;
-  });
+  const filteredRequests = serviceRequests.filter(req => filter === 'all' || req.status === filter);
 
   const stats = {
     total: serviceRequests.length,
@@ -81,43 +57,31 @@ function CaretakerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="relative">
+          <div className="h-16 w-16 rounded-full border-4 border-slate-200 border-t-indigo-600 animate-spin"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Navigation */}
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Route Care - Caretaker
-              </h1>
-              {caretakerData && (
-                <p className="text-xs text-gray-500">ID: {caretakerData.caretakerId}</p>
-              )}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-black text-xs">RC</span>
+              </div>
+              <h1 className="text-lg font-black text-slate-900 tracking-tight">Caretaker Portal</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700 hidden md:block">
-                {userProfile?.profile?.name}
+            <div className="flex items-center space-x-6">
+              <span className="text-sm font-semibold text-slate-600 hidden md:block">
+                Hello, {userProfile?.profile?.name}
               </span>
-              <Link
-                href="/"
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-              >
-                Home
-              </Link>
-              <button
-                onClick={logout}
-                className="px-4 py-2 text-sm bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition shadow-md"
-              >
+              <button onClick={logout} className="text-sm font-bold text-red-500 hover:text-red-600 transition">
                 Logout
               </button>
             </div>
@@ -125,148 +89,162 @@ function CaretakerDashboard() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition">
-            <p className="text-sm opacity-90 mb-1">Total Requests</p>
-            <p className="text-4xl font-bold">{stats.total}</p>
-          </div>
-          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition">
-            <p className="text-sm opacity-90 mb-1">Pending</p>
-            <p className="text-4xl font-bold">{stats.pending}</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition">
-            <p className="text-sm opacity-90 mb-1">In Progress</p>
-            <p className="text-4xl font-bold">{stats.inProgress}</p>
-          </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition">
-            <p className="text-sm opacity-90 mb-1">Completed</p>
-            <p className="text-4xl font-bold">{stats.completed}</p>
-          </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Statistics Section */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total Tasks" value={stats.total} color="blue" />
+          <StatCard label="Pending" value={stats.pending} color="amber" />
+          <StatCard label="Active" value={stats.inProgress} color="indigo" />
+          <StatCard label="Done" value={stats.completed} color="emerald" />
         </div>
 
-        {/* Caretaker ID Card */}
+        {/* Dynamic Caretaker ID Card */}
         {caretakerData && (
-          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-8 rounded-2xl shadow-2xl mb-8 transform hover:scale-[1.02] transition">
-            <div className="flex items-center justify-between">
+          <div className="relative overflow-hidden bg-slate-900 rounded-3xl p-8 mb-10 shadow-2xl shadow-slate-200">
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-bold mb-3">Your Caretaker ID</h2>
-                <p className="text-4xl font-mono font-bold tracking-wider mb-3 bg-white/20 px-6 py-3 rounded-lg inline-block">
-                  {caretakerData.caretakerId}
-                </p>
-                <p className="text-sm opacity-90 max-w-md">
-                  Share this ID with your clients to receive service requests
-                </p>
-              </div>
-              <div className="hidden md:block">
-                <div className="bg-white/20 p-6 rounded-2xl backdrop-blur-sm">
-                  <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                  </svg>
+                <span className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em]">Caretaker Identity</span>
+                <h2 className="text-white text-3xl font-black mt-2 mb-4">Service Profile</h2>
+                <div className="flex items-center gap-3">
+                  <p className="text-5xl font-mono font-black text-white bg-white/10 px-5 py-2 rounded-2xl border border-white/10">
+                    {caretakerData.caretakerId}
+                  </p>
+                  <button 
+                    onClick={() => {
+                        navigator.clipboard.writeText(caretakerData.caretakerId);
+                        alert("ID Copied to clipboard!");
+                    }}
+                    className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                  </button>
                 </div>
               </div>
+              <div className="hidden md:block opacity-20 transform rotate-12">
+                <svg className="w-48 h-48 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                </svg>
+              </div>
             </div>
+            {/* Background design elements */}
+            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"></div>
           </div>
         )}
 
-        {/* Filter Tabs */}
-        <div className="bg-white rounded-xl shadow-md mb-6 overflow-hidden">
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
-              {[
-                { key: 'all', label: 'All', count: stats.total },
-                { key: 'pending', label: 'Pending', count: stats.pending },
-                { key: 'in_progress', label: 'In Progress', count: stats.inProgress },
-                { key: 'completed', label: 'Completed', count: stats.completed }
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setFilter(tab.key)}
-                  className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
-                    filter === tab.key
-                      ? 'border-indigo-500 text-indigo-600 bg-indigo-50'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label} ({tab.count})
-                </button>
-              ))}
-            </nav>
+        {/* Main Content Area */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Tabs Navigation */}
+          <div className="flex space-x-2 p-1 bg-slate-200/50 rounded-2xl self-start">
+            {['all', 'pending', 'in_progress', 'completed'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className={`px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all ${
+                  filter === tab 
+                  ? 'bg-white text-indigo-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+
+          {/* Request Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredRequests.length === 0 ? (
+              <div className="lg:col-span-2 bg-white border-2 border-dashed border-slate-200 rounded-3xl p-20 text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                </div>
+                <h3 className="text-slate-900 font-bold text-lg">Queue is empty</h3>
+                <p className="text-slate-500">No tasks found matching this status.</p>
+              </div>
+            ) : (
+              filteredRequests.map((request) => (
+                <ServiceCard key={request.id} request={request} />
+              ))
+            )}
           </div>
         </div>
+      </main>
+    </div>
+  );
+}
 
-        {/* Service Requests List */}
-        <div className="space-y-4">
-          {filteredRequests.length === 0 ? (
-            <div className="bg-white p-16 rounded-xl shadow-md text-center">
-              <svg className="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <p className="text-gray-500 text-lg">No service requests found</p>
-              <p className="text-gray-400 text-sm mt-2">New requests will appear here</p>
-            </div>
-          ) : (
-            filteredRequests.map((request) => (
-              <div key={request.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition p-6 border border-gray-100">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">{request.serviceName}</h3>
-                    <p className="text-sm text-gray-500">Request ID: {request.requestId}</p>
-                  </div>
-                  <span className={`px-4 py-2 text-xs font-semibold rounded-full ${getStatusBadge(request.status)}`}>
-                    {request.status.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
+// Sub-component: Stat Card
+function StatCard({ label, value, color }) {
+  const colors = {
+    blue: 'text-blue-600 bg-blue-50',
+    amber: 'text-amber-600 bg-amber-50',
+    indigo: 'text-indigo-600 bg-indigo-50',
+    emerald: 'text-emerald-600 bg-emerald-50'
+  };
 
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Client:</span> {request.userName}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Phone:</span> {request.userPhone}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Email:</span> {request.userEmail}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Date:</span> {new Date(request.scheduledDate).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Time:</span> {request.scheduledTime}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Price:</span> ₹{request.servicePrice}
-                    </p>
-                  </div>
-                </div>
+  return (
+    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-transform hover:-translate-y-1">
+      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className={`text-4xl font-black ${colors[color].split(' ')[0]}`}>{value}</p>
+      <div className={`h-1.5 w-8 rounded-full mt-3 ${colors[color].split(' ')[1]}`}></div>
+    </div>
+  );
+}
 
-                {request.specialRequirements && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Special Requirements:</span>
-                      <br />
-                      {request.specialRequirements}
-                    </p>
-                  </div>
-                )}
+// Sub-component: Service Request Card
+function ServiceCard({ request }) {
+  const statusConfig = {
+    pending: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Pending' },
+    in_progress: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'In Progress' },
+    completed: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Completed' },
+    cancelled: { bg: 'bg-slate-100', text: 'text-slate-600', label: 'Cancelled' }
+  };
 
-                <div className="flex gap-2">
-                  <Link
-                    href={`/caretaker/service/${request.id}`}
-                    className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 text-sm font-medium transition shadow-md hover:shadow-lg"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            ))
-          )}
+  const config = statusConfig[request.status] || statusConfig.pending;
+
+  return (
+    <div className="bg-white rounded-3xl border border-slate-100 p-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all group">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h3 className="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition tracking-tight">
+            {request.serviceName}
+          </h3>
+          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">ID: {request.requestId}</p>
+        </div>
+        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${config.bg} ${config.text}`}>
+          {config.label}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-y-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Client</p>
+            <p className="text-sm font-bold text-slate-800">{request.userName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Scheduled</p>
+            <p className="text-sm font-bold text-slate-800">{new Date(request.scheduledDate).toLocaleDateString()}</p>
+          </div>
         </div>
       </div>
+
+      <Link 
+        href={`/caretaker/service/${request.id}`}
+        className="block w-full text-center py-4 bg-slate-50 hover:bg-indigo-600 hover:text-white rounded-2xl text-sm font-black transition-all duration-300"
+      >
+        Manage Task
+      </Link>
     </div>
   );
 }

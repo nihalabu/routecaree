@@ -39,7 +39,7 @@ export default function SignUp() {
 
     try {
       await register(formData.email, formData.password, formData.name);
-      router.push('/auth/select-roles'); // Redirect to complete profile
+      router.push('/auth/select-roles'); // Updated to point to your role selection page
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         setError('Email already in use. Please login instead.');
@@ -54,201 +54,163 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image/Design */}
-      <div className="hidden lg:block relative w-0 flex-1">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500 via-teal-500 to-blue-600">
-          <div className="absolute inset-0 bg-black opacity-20"></div>
-          <div className="relative h-full flex items-center justify-center px-12">
-            <div className="text-center text-white">
-              <h1 className="text-5xl font-extrabold mb-6">Join Route Care</h1>
-              <p className="text-2xl font-light mb-8">Your Home, Our Care</p>
-              <div className="space-y-6 max-w-md mx-auto text-left">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-20">
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium">Verified Caretakers</h3>
-                    <p className="text-sm opacity-90">All caretakers are verified and experienced</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-20">
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium">Secure & Safe</h3>
-                    <p className="text-sm opacity-90">Your data is encrypted and protected</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-20">
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium">Real-time Updates</h3>
-                    <p className="text-sm opacity-90">Track service progress with live updates</p>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen flex bg-gray-50 font-sans">
+      {/* Left Side - Branding & Trust Signals */}
+      <div className="hidden lg:flex relative w-0 flex-1 bg-gradient-to-br from-teal-600 to-emerald-800">
+        <div className="absolute inset-0 flex items-center justify-center px-16">
+          <div className="text-white max-w-lg">
+            <h1 className="text-5xl font-black mb-6 tracking-tight">Join Route Care</h1>
+            <p className="text-xl font-medium text-emerald-50 mb-12 opacity-90">
+              Start managing your home and family care with total peace of mind.
+            </p>
+            
+            <div className="space-y-8">
+              <TrustPoint 
+                title="Verified Professionals" 
+                desc="Strict background checks for all service providers."
+                icon={<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />}
+              />
+              <TrustPoint 
+                title="Secure Infrastructure" 
+                desc="Your data and property details are fully encrypted."
+                icon={<path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />}
+              />
+              <TrustPoint 
+                title="Real-Time Transparency" 
+                desc="Get instant photo and video proof of completed tasks."
+                icon={<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 00-2 2z" />}
+              />
             </div>
           </div>
         </div>
       </div>
 
       {/* Right Side - Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-white">
-        <div className="max-w-md w-full space-y-8">
-          {/* Logo */}
-          <div>
-            <h2 className="text-4xl font-extrabold text-gray-900">
-              Create account
+      <div className="flex-1 flex items-center justify-center px-6 lg:px-20 xl:px-24 bg-white shadow-2xl z-10">
+        <div className="max-w-md w-full">
+          <div className="text-center lg:text-left">
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+              Create Account
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition">
-                Sign in here
+            <p className="mt-3 text-gray-500 text-lg">
+              Already a member?{' '}
+              <Link href="/auth/login" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors underline underline-offset-4">
+                Sign in
               </Link>
             </p>
           </div>
 
-          {/* Error Message */}
           {error && (
-            <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800">{error}</p>
-                </div>
-              </div>
+            <div className="mt-6 rounded-xl bg-red-50 p-4 border border-red-100 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm font-medium text-red-800">{error}</p>
             </div>
           )}
 
-          {/* Form */}
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  placeholder="Enter your full name"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  placeholder="Enter your email"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  placeholder="Create a password"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  placeholder="Confirm your password"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center">
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Full Name</label>
               <input
-                id="terms"
-                name="terms"
-                type="checkbox"
+                name="name"
+                type="text"
                 required
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                value={formData.name}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="Enter your full name"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                I agree to the{' '}
-                <a href="#" className="text-indigo-600 hover:text-indigo-500">
-                  Terms and Conditions
-                </a>
-              </label>
             </div>
 
             <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating account...
-                  </span>
-                ) : (
-                  'Create account'
-                )}
-              </button>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Email Address</label>
+              <input
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="name@example.com"
+              />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="6+ chars"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Confirm</label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="Repeat it"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-start pt-2">
+              <input
+                id="terms"
+                type="checkbox"
+                required
+                className="h-4 w-4 mt-1 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+              />
+              <label htmlFor="terms" className="ml-3 text-sm text-gray-500 leading-snug">
+                I agree to the <a href="#" className="text-blue-600 font-semibold hover:underline">Terms of Service</a> and <a href="#" className="text-blue-600 font-semibold hover:underline">Privacy Policy</a>.
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary flex items-center justify-center gap-2 mt-4 shadow-lg active:scale-[0.98]"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Creating your account...</span>
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
           </form>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Helper component for the trust points in the sidebar
+function TrustPoint({ title, desc, icon }) {
+  return (
+    <div className="flex items-start gap-5 group">
+      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+        <svg className="h-6 w-6 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {icon}
+        </svg>
+      </div>
+      <div>
+        <h3 className="text-lg font-bold text-white mb-1">{title}</h3>
+        <p className="text-sm text-emerald-50 opacity-80 leading-relaxed">{desc}</p>
       </div>
     </div>
   );
