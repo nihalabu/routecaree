@@ -79,7 +79,7 @@ function CaretakerDashboardContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <Link href="/caretaker" className="flex items-center gap-2 hover:opacity-80 transition">
+              <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
                 <span className="text-xl font-bold text-white tracking-tight">
                   Route<span className="text-slate-300">Care</span>
                 </span>

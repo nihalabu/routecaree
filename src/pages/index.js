@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase/config';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 
 export default function Home() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const [isFullyRegistered, setIsFullyRegistered] = useState(false);
 
   useEffect(() => {
@@ -29,12 +29,16 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-black text-white tracking-tighter">
-                Route<span className="text-slate-300">Care</span>
-              </span>
+              <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
+                <span className="text-2xl font-black text-white tracking-tighter">
+                  Route<span className="text-slate-300">Care</span>
+                </span>
+              </Link>
             </div>
             <div className="flex items-center gap-6">
-              {user && userProfile && userProfile.role ? (
+              {loading ? (
+                <div className="h-8 w-24 bg-white/5 animate-pulse rounded-lg" />
+              ) : user && userProfile && userProfile.role ? (
                 <>
                   <span className="text-sm font-bold text-slate-300 hidden md:block px-2">
                     {userProfile?.profile?.name || user?.email}

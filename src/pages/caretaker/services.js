@@ -180,7 +180,7 @@ function CaretakerServicesContent() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                 </svg>
                             </Link>
-                            <Link href="/caretaker" className="flex items-center gap-2 hover:opacity-80 transition">
+                            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
                                 <span className="text-lg font-black text-white tracking-tight">
                                     Route<span className="text-slate-300">Care</span>
                                 </span>
