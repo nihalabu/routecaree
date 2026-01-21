@@ -29,14 +29,13 @@ function UserDashboardContent() {
   useEffect(() => {
     if (!user) return;
 
-    // Real-time listener for NRI user document using UID as document ID
-    const userDocRef = doc(db, 'nriUsers', user.uid);
-    const unsubscribe = onSnapshot(userDocRef, async (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
+    // Unified real-time listener for User Data (works for both UID-based and migrated docs)
+    const userQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
+    const unsubscribeUser = onSnapshot(userQuery, async (snapshot) => {
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
         setUserData(data);
 
-        // Fetch connected caretakers
         if (data.connectedCaretakers && data.connectedCaretakers.length > 0) {
           try {
             const fetchedCaretakers = await Promise.all(
@@ -50,28 +49,23 @@ function UserDashboardContent() {
           setCaretakers([]);
         }
       } else {
-        // Handle case where user document is found via query but not by ID (migration)
-        const q = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
-        const qSnapshot = await getDocs(q);
-        if (!qSnapshot.empty) {
-          const data = qSnapshot.docs[0].data();
-          setUserData(data);
-          if (data.connectedCaretakers && data.connectedCaretakers.length > 0) {
-            const fetchedCaretakers = await Promise.all(
-              data.connectedCaretakers.map(conn => fetchCaretakerData(conn.caretakerId))
-            );
-            setCaretakers(fetchedCaretakers.filter(c => c !== null));
-          }
-        } else {
-          setUserData(null);
-          setCaretakers([]);
-        }
+        setUserData(null);
+        setCaretakers([]);
       }
       setLoading(false);
     });
 
-    fetchServiceRequests();
-    return () => unsubscribe();
+    // Real-time listener for Service Requests
+    const requestsQuery = query(collection(db, 'serviceRequests'), where('userId', '==', user.uid));
+    const unsubscribeRequests = onSnapshot(requestsQuery, (snapshot) => {
+      const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setServiceRequests(requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    });
+
+    return () => {
+      unsubscribeUser();
+      unsubscribeRequests();
+    };
   }, [user]);
 
   const fetchCaretakerData = async (caretakerId) => {
@@ -115,7 +109,7 @@ function UserDashboardContent() {
 
       for (const trimmedId of rawIds) {
         try {
-          // Find the caretaker
+          // 1. Find the caretaker
           const caretakerQuery = query(collection(db, 'caretakers'), where('caretakerId', '==', trimmedId));
           const caretakerSnapshot = await getDocs(caretakerQuery);
 
@@ -127,9 +121,9 @@ function UserDashboardContent() {
           const caretakerDocRef = caretakerSnapshot.docs[0].ref;
           const caretakerDocData = caretakerSnapshot.docs[0].data();
 
-          // Ensure NRI user document exists and connect
-          const userDocRef = doc(db, 'nriUsers', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
+          // 2. Find the NRI user document (regardless of document ID structure)
+          const nriQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
+          const nriSnapshot = await getDocs(nriQuery);
 
           const newConnection = {
             caretakerId: trimmedId,
@@ -138,8 +132,9 @@ function UserDashboardContent() {
             addedAt: new Date().toISOString()
           };
 
-          if (!userDocSnap.exists()) {
-            await setDoc(userDocRef, {
+          if (nriSnapshot.empty) {
+            // Create new UID-based document if absolutely none exists
+            await setDoc(doc(db, 'nriUsers', user.uid), {
               userId: user.uid,
               email: user.email,
               profile: userProfile?.profile || {},
@@ -147,11 +142,14 @@ function UserDashboardContent() {
               createdAt: new Date().toISOString()
             });
           } else {
-            const currentData = userDocSnap.data();
+            const userDocRef = nriSnapshot.docs[0].ref;
+            const currentData = nriSnapshot.docs[0].data();
+
             if (currentData.connectedCaretakers?.some(c => c.caretakerId === trimmedId)) {
               results.failed.push(`${trimmedId} (Already connected)`);
               continue;
             }
+
             await updateDoc(userDocRef, {
               connectedCaretakers: [...(currentData.connectedCaretakers || []), newConnection]
             });
@@ -243,7 +241,13 @@ function UserDashboardContent() {
         });
       }
 
-      // Clear local caretaker state temporarily if needed (onSnapshot will update it)
+      // Update local state immediately for snappy UI
+      setCaretakers(prev => prev.filter(c => c.caretakerId !== caretakerIdToRemove));
+      setUserData(prev => ({
+        ...prev,
+        connectedCaretakers: (prev?.connectedCaretakers || []).filter(c => c.caretakerId !== caretakerIdToRemove)
+      }));
+
       alert('Caretaker removed successfully');
     } catch (error) {
       console.error('Error removing caretaker:', error);
