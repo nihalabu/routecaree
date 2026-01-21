@@ -144,7 +144,7 @@ export default function Login() {
             </svg>
           </div>
           <h1 className="text-6xl font-black mb-6 tracking-tighter text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-            Route<span className="text-cyan-400">Care</span>
+            Route<span className="text-amber-400">Care</span>
           </h1>
           <p className="text-xl font-medium text-white mb-12 text-center max-w-md leading-relaxed opacity-95">
             Connecting NRIs with trusted home management and elderly care professionals.

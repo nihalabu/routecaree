@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { collection, query, where, getDocs, updateDoc, setDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, setDoc, doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import Link from 'next/link';
 import Button from '@/components/shared/Button';
@@ -28,11 +28,11 @@ function UserDashboardContent() {
   useEffect(() => {
     if (!user) return;
 
-    // Real-time listener for NRI user document
-    const q = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      if (!snapshot.empty) {
-        const data = snapshot.docs[0].data();
+    // Real-time listener for NRI user document using UID as document ID
+    const userDocRef = doc(db, 'nriUsers', user.uid);
+    const unsubscribe = onSnapshot(userDocRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
         setUserData(data);
 
         // Fetch connected caretakers
@@ -50,24 +50,32 @@ function UserDashboardContent() {
           setCaretakerData(null);
         }
       } else {
-        setUserData(null);
-        setCaretakerData(null);
+        // Handle case where user document is found via query but not by ID (migration)
+        // Attempt to find by field if record doesn't exist by UID doc ID
+        const q = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
+        const qSnapshot = await getDocs(q);
+        if (!qSnapshot.empty) {
+          const data = qSnapshot.docs[0].data();
+          setUserData(data);
+          // Fetch caretakers as above...
+          if (data.connectedCaretakers && data.connectedCaretakers.length > 0) {
+            const caretakers = await Promise.all(
+              data.connectedCaretakers.map(conn => fetchCaretakerData(conn.caretakerId))
+            );
+            const validCaretakers = caretakers.filter(c => c !== null);
+            setCaretakerData(validCaretakers.length > 0 ? validCaretakers[0] : null);
+          }
+        } else {
+          setUserData(null);
+          setCaretakerData(null);
+        }
       }
-      setLoading(false);
-    }, (error) => {
-      console.error('onSnapshot error:', error);
       setLoading(false);
     });
 
     fetchServiceRequests();
-
     return () => unsubscribe();
   }, [user]);
-
-  const fetchUserData = () => {
-    // This is now handled by the onSnapshot listener in useEffect
-    return;
-  };
 
   const fetchCaretakerData = async (caretakerId) => {
     try {
@@ -102,27 +110,12 @@ function UserDashboardContent() {
       return;
     }
 
-    if (!/^CT-[A-Z0-9]{6}$/.test(trimmedId)) {
-      setAddError('Invalid ID format. Should be CT-XXXXXX (e.g., CT-A1B2C3)');
-      return;
-    }
-
     setVerifying(true);
     setAddError('');
 
     try {
-      // Check if already connected
-      if (userData?.connectedCaretakers?.some(c => c.caretakerId === trimmedId)) {
-        setAddError('This caretaker is already connected to your account');
-        setVerifying(false);
-        return;
-      }
-
       // Find the caretaker
-      const caretakerQuery = query(
-        collection(db, 'caretakers'),
-        where('caretakerId', '==', trimmedId)
-      );
+      const caretakerQuery = query(collection(db, 'caretakers'), where('caretakerId', '==', trimmedId));
       const caretakerSnapshot = await getDocs(caretakerQuery);
 
       if (caretakerSnapshot.empty) {
@@ -134,65 +127,54 @@ function UserDashboardContent() {
       const caretakerDocRef = caretakerSnapshot.docs[0].ref;
       const caretakerDocData = caretakerSnapshot.docs[0].data();
 
-      // Find or create NRI user document
-      const userQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
-      const userSnapshot = await getDocs(userQuery);
+      // Ensure NRI user document exists and connect
+      const userDocRef = doc(db, 'nriUsers', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      let userDocRef;
-      let currentCaretakers = [];
+      const newConnection = {
+        caretakerId: trimmedId,
+        caretakerUserId: caretakerDocData.userId,
+        caretakerName: caretakerDocData.profile?.name || '',
+        addedAt: new Date().toISOString()
+      };
 
-      if (userSnapshot.empty) {
-        // Create new NRI user document
-        console.log('Creating new NRI user document');
-        const newUserRef = doc(collection(db, 'nriUsers'));
-        userDocRef = newUserRef;
-
-        await setDoc(newUserRef, {
+      if (!userDocSnap.exists()) {
+        // Create new
+        await setDoc(userDocRef, {
           userId: user.uid,
           email: user.email,
-          profile: userData?.profile || userProfile?.profile || {},
-          connectedCaretakers: [{
-            caretakerId: trimmedId,
-            caretakerUserId: caretakerDocData.userId,
-            caretakerName: caretakerDocData.profile?.name || '',
-            addedAt: new Date().toISOString()
-          }],
+          profile: userProfile?.profile || {},
+          connectedCaretakers: [newConnection],
           createdAt: new Date().toISOString()
         });
       } else {
-        // Update existing document
-        userDocRef = userSnapshot.docs[0].ref;
-        currentCaretakers = userData?.connectedCaretakers || [];
-
+        const currentData = userDocSnap.data();
+        if (currentData.connectedCaretakers?.some(c => c.caretakerId === trimmedId)) {
+          setAddError('Caretaker already connected.');
+          setVerifying(false);
+          return;
+        }
         await updateDoc(userDocRef, {
-          connectedCaretakers: [...currentCaretakers, {
-            caretakerId: trimmedId,
-            caretakerUserId: caretakerDocData.userId,
-            caretakerName: caretakerDocData.profile?.name || '',
-            addedAt: new Date().toISOString()
-          }]
+          connectedCaretakers: [...(currentData.connectedCaretakers || []), newConnection]
         });
       }
 
-      // Update caretaker's connectedNRIs
+      // Update caretaker's record
       const currentNRIs = caretakerDocData.connectedNRIs || [];
       await updateDoc(caretakerDocRef, {
         connectedNRIs: [...currentNRIs, {
           nriUserId: user.uid,
-          nriName: userData?.profile?.name || userProfile?.profile?.name || user.email || 'NRI User',
+          nriName: userProfile?.profile?.name || user.email || 'NRI User',
           addedAt: new Date().toISOString()
         }]
       });
 
-      // Refresh data and close modal
-      await fetchUserData();
       setShowAddCaretakerModal(false);
       setCaretakerId('');
-      setAddError('');
       alert('Caretaker added successfully!');
     } catch (error) {
       console.error('Error adding caretaker:', error);
-      setAddError(`Failed to add caretaker: ${error.message || 'Please try again.'}`);
+      setAddError(`Failed to add caretaker: ${error.message}`);
     } finally {
       setVerifying(false);
     }

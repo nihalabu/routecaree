@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/shared/Button';
@@ -87,7 +87,7 @@ function UserProfileSetupContent() {
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'nriUsers'), userData);
+      await setDoc(doc(db, 'nriUsers', user.uid), userData);
       router.push('/user');
     } catch (err) {
       setError('Failed to save profile.');

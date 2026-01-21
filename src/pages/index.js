@@ -81,8 +81,8 @@ export default function Home() {
 
         {/* Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-6xl md:text-7xl font-black text-white mb-8 tracking-tighter animate-in fade-in slide-in-from-bottom-4 duration-1000 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-            Trusted Home Care for <span className="text-cyan-400">NRIs</span>
+          <h1 className="text-6xl md:text-7xl font-black text-white mb-8 tracking-tighter animate-in fade-in slide-in-from-bottom-4 duration-1000 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+            Trusted Home Care for <span className="text-amber-400">NRIs</span>
           </h1>
           <p className="text-xl md:text-2xl text-white mb-12 max-w-3xl mx-auto leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-6 duration-1000 opacity-90">
             Professional property management and care services. Stay connected with your loved ones through our network of verified professionals.

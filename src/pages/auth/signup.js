@@ -50,7 +50,7 @@ export default function Signup() {
         <div className="relative z-10 flex flex-col items-center justify-center w-full px-20 text-white">
           <div className="max-w-lg">
             <h1 className="text-6xl font-black mb-8 tracking-tighter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-              Join Route<span className="text-cyan-400">Care</span>
+              Join Route<span className="text-amber-400">Care</span>
             </h1>
             <p className="text-2xl font-medium text-white mb-12 opacity-95 leading-relaxed">
               Start managing your home and family care with total peace of mind.
