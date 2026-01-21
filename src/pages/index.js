@@ -34,7 +34,7 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center gap-6">
-              {user && userProfile && userProfile.role && isFullyRegistered ? (
+              {user && userProfile && userProfile.role ? (
                 <>
                   <span className="text-sm font-bold text-slate-300 hidden md:block px-2">
                     {userProfile?.profile?.name || user?.email}

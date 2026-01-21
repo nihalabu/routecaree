@@ -119,6 +119,12 @@ export default function CaretakerProfileSetup() {
       };
 
       await addDoc(collection(db, 'caretakers'), caretakerData);
+
+      // Also update the main user document in 'users' collection with caretakerId
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { caretakerId: caretakerId });
+
       alert(`Success! Your Caretaker ID is: ${caretakerId}`);
       router.push('/caretaker');
     } catch (error) {
