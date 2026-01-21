@@ -2,13 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function RequestServiceContent() {
   const router = useRouter();
-  const { serviceId } = router.query;
+  const { serviceId, caretakerId: queryCaretakerId } = router.query;
   const { user } = useAuth();
 
   const [userData, setUserData] = useState(null);
@@ -28,35 +28,53 @@ function RequestServiceContent() {
     if (user && serviceId) {
       fetchData();
     }
-  }, [user, serviceId]);
+  }, [user, serviceId, queryCaretakerId]);
 
   const fetchData = async () => {
     try {
-      const userQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
-      const userSnapshot = await getDocs(userQuery);
+      const userDocRef = doc(db, 'nriUsers', user.uid);
+      const userSnap = await getDoc(userDocRef);
 
-      if (!userSnapshot.empty) {
-        const userInfo = userSnapshot.docs[0].data();
+      let userInfo = null;
+      if (userSnap.exists()) {
+        userInfo = userSnap.data();
+      } else {
+        const userQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
+        const userSnapshot = await getDocs(userQuery);
+        if (!userSnapshot.empty) {
+          userInfo = userSnapshot.docs[0].data();
+        }
+      }
+
+      if (userInfo) {
         setUserData(userInfo);
-        setFormData(prev => ({ ...prev, serviceAddress: userInfo.profile.propertyAddress }));
+        setFormData(prev => ({ ...prev, serviceAddress: userInfo.profile?.propertyAddress || '' }));
 
-        if (userInfo.linkedCaretakers?.length > 0) {
+        const connectedCaretakers = userInfo.connectedCaretakers || [];
+        if (connectedCaretakers.length > 0) {
+          // Determine which caretaker to fetch
+          let targetCaretakerId = queryCaretakerId;
+
+          if (!targetCaretakerId) {
+            targetCaretakerId = connectedCaretakers[0].caretakerId;
+          }
+
           const caretakerQuery = query(
             collection(db, 'caretakers'),
-            where('caretakerId', '==', userInfo.linkedCaretakers[0])
+            where('caretakerId', '==', targetCaretakerId)
           );
           const caretakerSnapshot = await getDocs(caretakerQuery);
 
           if (!caretakerSnapshot.empty) {
             const caretakerInfo = caretakerSnapshot.docs[0].data();
             setCaretakerData(caretakerInfo);
-            const service = caretakerInfo.servicesOffered.find(s => s.id === serviceId);
+            const service = caretakerInfo.servicesOffered?.find(s => s.id === serviceId);
             setSelectedService(service);
           }
         }
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }

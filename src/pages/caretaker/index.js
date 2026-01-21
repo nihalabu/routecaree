@@ -108,6 +108,12 @@ function CaretakerDashboardContent() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h2 className="mb-2">Welcome back, {(userProfile?.profile?.name || 'Caretaker').split(' ')[0]}!</h2>
+          <p className="text-slate-600">Overview of your service requests and connections</p>
+        </div>
+
         {/* Caretaker ID Card */}
         {caretakerData && (
           <div className="mb-8">

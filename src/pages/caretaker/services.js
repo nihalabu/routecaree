@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase/config';
 import Link from 'next/link';
 
 function CaretakerServicesContent() {
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const [caretakerData, setCaretakerData] = useState(null);
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -182,9 +182,16 @@ function CaretakerServicesContent() {
                             </Link>
                             <span className="text-lg font-black text-white">Manage Services</span>
                         </div>
-                        <Link href="/caretaker" className="text-sm font-bold text-slate-300 hover:text-white transition">
-                            Dashboard
-                        </Link>
+                        <div className="flex items-center gap-6">
+                            {userProfile?.profile?.name && (
+                                <span className="text-sm font-bold text-slate-300 hidden md:block px-2">
+                                    {userProfile.profile.name}
+                                </span>
+                            )}
+                            <Link href="/caretaker" className="text-sm font-bold text-slate-300 hover:text-white transition">
+                                Dashboard
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </nav>

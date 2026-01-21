@@ -14,7 +14,7 @@ function UserDashboardContent() {
   const router = useRouter();
   const { user, userProfile, logout } = useAuth();
   const [userData, setUserData] = useState(null);
-  const [caretakerData, setCaretakerData] = useState(null);
+  const [caretakers, setCaretakers] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddCaretakerModal, setShowAddCaretakerModal] = useState(false);
@@ -23,6 +23,7 @@ function UserDashboardContent() {
   const [addError, setAddError] = useState('');
   const [showServicesModal, setShowServicesModal] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedCaretakerForServices, setSelectedCaretakerForServices] = useState(null);
   const [removingCaretaker, setRemovingCaretaker] = useState(false);
 
   useEffect(() => {
@@ -38,36 +39,32 @@ function UserDashboardContent() {
         // Fetch connected caretakers
         if (data.connectedCaretakers && data.connectedCaretakers.length > 0) {
           try {
-            const caretakers = await Promise.all(
+            const fetchedCaretakers = await Promise.all(
               data.connectedCaretakers.map(conn => fetchCaretakerData(conn.caretakerId))
             );
-            const validCaretakers = caretakers.filter(c => c !== null);
-            setCaretakerData(validCaretakers.length > 0 ? validCaretakers[0] : null);
+            setCaretakers(fetchedCaretakers.filter(c => c !== null));
           } catch (error) {
             console.error('Error fetching caretakers:', error);
           }
         } else {
-          setCaretakerData(null);
+          setCaretakers([]);
         }
       } else {
         // Handle case where user document is found via query but not by ID (migration)
-        // Attempt to find by field if record doesn't exist by UID doc ID
         const q = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
         const qSnapshot = await getDocs(q);
         if (!qSnapshot.empty) {
           const data = qSnapshot.docs[0].data();
           setUserData(data);
-          // Fetch caretakers as above...
           if (data.connectedCaretakers && data.connectedCaretakers.length > 0) {
-            const caretakers = await Promise.all(
+            const fetchedCaretakers = await Promise.all(
               data.connectedCaretakers.map(conn => fetchCaretakerData(conn.caretakerId))
             );
-            const validCaretakers = caretakers.filter(c => c !== null);
-            setCaretakerData(validCaretakers.length > 0 ? validCaretakers[0] : null);
+            setCaretakers(fetchedCaretakers.filter(c => c !== null));
           }
         } else {
           setUserData(null);
-          setCaretakerData(null);
+          setCaretakers([]);
         }
       }
       setLoading(false);
@@ -103,10 +100,10 @@ function UserDashboardContent() {
   };
 
   const handleAddCaretaker = async () => {
-    const trimmedId = caretakerId.trim().toUpperCase();
+    const rawIds = caretakerId.split(',').map(id => id.trim().toUpperCase()).filter(id => id);
 
-    if (!trimmedId) {
-      setAddError('Please enter a Caretaker ID');
+    if (rawIds.length === 0) {
+      setAddError('Please enter at least one Caretaker ID');
       return;
     }
 
@@ -114,67 +111,81 @@ function UserDashboardContent() {
     setAddError('');
 
     try {
-      // Find the caretaker
-      const caretakerQuery = query(collection(db, 'caretakers'), where('caretakerId', '==', trimmedId));
-      const caretakerSnapshot = await getDocs(caretakerQuery);
+      const results = { success: [], failed: [] };
 
-      if (caretakerSnapshot.empty) {
-        setAddError('Caretaker ID not found. Please check with your caretaker.');
-        setVerifying(false);
-        return;
-      }
+      for (const trimmedId of rawIds) {
+        try {
+          // Find the caretaker
+          const caretakerQuery = query(collection(db, 'caretakers'), where('caretakerId', '==', trimmedId));
+          const caretakerSnapshot = await getDocs(caretakerQuery);
 
-      const caretakerDocRef = caretakerSnapshot.docs[0].ref;
-      const caretakerDocData = caretakerSnapshot.docs[0].data();
+          if (caretakerSnapshot.empty) {
+            results.failed.push(`${trimmedId} (Invalid ID)`);
+            continue;
+          }
 
-      // Ensure NRI user document exists and connect
-      const userDocRef = doc(db, 'nriUsers', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+          const caretakerDocRef = caretakerSnapshot.docs[0].ref;
+          const caretakerDocData = caretakerSnapshot.docs[0].data();
 
-      const newConnection = {
-        caretakerId: trimmedId,
-        caretakerUserId: caretakerDocData.userId,
-        caretakerName: caretakerDocData.profile?.name || '',
-        addedAt: new Date().toISOString()
-      };
+          // Ensure NRI user document exists and connect
+          const userDocRef = doc(db, 'nriUsers', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
 
-      if (!userDocSnap.exists()) {
-        // Create new
-        await setDoc(userDocRef, {
-          userId: user.uid,
-          email: user.email,
-          profile: userProfile?.profile || {},
-          connectedCaretakers: [newConnection],
-          createdAt: new Date().toISOString()
-        });
-      } else {
-        const currentData = userDocSnap.data();
-        if (currentData.connectedCaretakers?.some(c => c.caretakerId === trimmedId)) {
-          setAddError('Caretaker already connected.');
-          setVerifying(false);
-          return;
+          const newConnection = {
+            caretakerId: trimmedId,
+            caretakerUserId: caretakerDocData.userId,
+            caretakerName: caretakerDocData.profile?.name || '',
+            addedAt: new Date().toISOString()
+          };
+
+          if (!userDocSnap.exists()) {
+            await setDoc(userDocRef, {
+              userId: user.uid,
+              email: user.email,
+              profile: userProfile?.profile || {},
+              connectedCaretakers: [newConnection],
+              createdAt: new Date().toISOString()
+            });
+          } else {
+            const currentData = userDocSnap.data();
+            if (currentData.connectedCaretakers?.some(c => c.caretakerId === trimmedId)) {
+              results.failed.push(`${trimmedId} (Already connected)`);
+              continue;
+            }
+            await updateDoc(userDocRef, {
+              connectedCaretakers: [...(currentData.connectedCaretakers || []), newConnection]
+            });
+          }
+
+          // Update caretaker's record
+          const currentNRIs = caretakerDocData.connectedNRIs || [];
+          await updateDoc(caretakerDocRef, {
+            connectedNRIs: [...currentNRIs, {
+              nriUserId: user.uid,
+              nriName: userProfile?.profile?.name || user.email || 'NRI User',
+              addedAt: new Date().toISOString()
+            }]
+          });
+          results.success.push(trimmedId);
+        } catch (err) {
+          console.error(`Error adding ${trimmedId}:`, err);
+          results.failed.push(`${trimmedId} (Error)`);
         }
-        await updateDoc(userDocRef, {
-          connectedCaretakers: [...(currentData.connectedCaretakers || []), newConnection]
-        });
       }
 
-      // Update caretaker's record
-      const currentNRIs = caretakerDocData.connectedNRIs || [];
-      await updateDoc(caretakerDocRef, {
-        connectedNRIs: [...currentNRIs, {
-          nriUserId: user.uid,
-          nriName: userProfile?.profile?.name || user.email || 'NRI User',
-          addedAt: new Date().toISOString()
-        }]
-      });
-
-      setShowAddCaretakerModal(false);
-      setCaretakerId('');
-      alert('Caretaker added successfully!');
+      if (results.failed.length > 0) {
+        setAddError(`Added: ${results.success.join(', ') || 'None'}. Failed: ${results.failed.join(', ')}`);
+        if (results.success.length > 0) {
+          setCaretakerId('');
+        }
+      } else {
+        setShowAddCaretakerModal(false);
+        setCaretakerId('');
+        alert('Caretaker(s) added successfully!');
+      }
     } catch (error) {
-      console.error('Error adding caretaker:', error);
-      setAddError(`Failed to add caretaker: ${error.message}`);
+      console.error('Error adding caretakers:', error);
+      setAddError(`Failed to process: ${error.message}`);
     } finally {
       setVerifying(false);
     }
@@ -232,12 +243,8 @@ function UserDashboardContent() {
         });
       }
 
-      // Clear caretaker data and refresh
-      setCaretakerData(null);
+      // Clear local caretaker state temporarily if needed (onSnapshot will update it)
       alert('Caretaker removed successfully');
-
-      // Refresh user data to ensure UI is in sync
-      await fetchUserData();
     } catch (error) {
       console.error('Error removing caretaker:', error);
       alert(`Failed to remove caretaker: ${error.message}`);
@@ -246,8 +253,9 @@ function UserDashboardContent() {
     }
   };
 
-  const openServicesModal = (services) => {
-    setSelectedServices(services || []);
+  const openServicesModal = (caretaker) => {
+    setSelectedServices(caretaker.servicesOffered || []);
+    setSelectedCaretakerForServices(caretaker);
     setShowServicesModal(true);
   };
 
@@ -294,7 +302,7 @@ function UserDashboardContent() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="mb-2">Welcome back, {userData?.profile?.name?.split(' ')[0] || 'User'}!</h2>
+          <h2 className="mb-2">Welcome back, {(userData?.profile?.name || userProfile?.profile?.name || 'User').split(' ')[0]}!</h2>
           <p className="text-slate-600">Manage your property and care services</p>
         </div>
 
@@ -307,7 +315,7 @@ function UserDashboardContent() {
             </Button>
           </div>
 
-          {!caretakerData ? (
+          {caretakers.length === 0 ? (
             <Card>
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -323,50 +331,54 @@ function UserDashboardContent() {
               </div>
             </Card>
           ) : (
-            <Card>
-              <div className="flex items-start justify-between">
-                <div className="flex gap-4">
-                  <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <span className="text-2xl font-bold text-blue-600">
-                      {caretakerData.profile?.name?.charAt(0) || 'C'}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="mb-1">{caretakerData.profile?.name}</h4>
-                    <p className="text-sm text-slate-600 mb-2">{caretakerData.profile?.serviceArea || 'Service Provider'}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">
-                        {caretakerData.caretakerId}
-                      </span>
-                      <Badge variant="completed">Verified</Badge>
+            <div className="grid gap-4">
+              {caretakers.map((caretaker) => (
+                <Card key={caretaker.caretakerId}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex gap-4">
+                      <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {caretaker.profile?.name?.charAt(0) || 'C'}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="mb-1">{caretaker.profile?.name}</h4>
+                        <p className="text-sm text-slate-600 mb-2">{caretaker.profile?.serviceArea || 'Service Provider'}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">
+                            {caretaker.caretakerId}
+                          </span>
+                          <Badge variant="completed">Verified</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-3">
+                      <div className="text-right">
+                        <p className="text-sm text-slate-500">Contact</p>
+                        <p className="text-sm font-medium">{caretaker.profile?.phone}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openServicesModal(caretaker)}
+                        >
+                          View Services
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleRemoveCaretaker(caretaker)}
+                          disabled={removingCaretaker}
+                        >
+                          {removingCaretaker ? 'Removing...' : 'Remove'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-3">
-                  <div className="text-right">
-                    <p className="text-sm text-slate-500">Contact</p>
-                    <p className="text-sm font-medium">{caretakerData.profile?.phone}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openServicesModal(caretakerData.servicesOffered)}
-                    >
-                      View Services
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => handleRemoveCaretaker(caretakerData)}
-                      disabled={removingCaretaker}
-                    >
-                      {removingCaretaker ? 'Removing...' : 'Remove'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
 
@@ -453,10 +465,10 @@ function UserDashboardContent() {
                   type="text"
                   value={caretakerId}
                   onChange={(e) => setCaretakerId(e.target.value)}
-                  placeholder="Enter ID (e.g., CT-A1B2C3)"
+                  placeholder="Enter ID(s) (e.g., CT-A1B2C3, CT-D4E5F6)"
                   className="input uppercase"
                 />
-                <p className="text-xs text-slate-500 mt-2">Ask your caretaker for their unique ID</p>
+                <p className="text-xs text-slate-500 mt-2">Enter one or more IDs separated by commas</p>
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -524,7 +536,7 @@ function UserDashboardContent() {
                         size="sm"
                         onClick={() => {
                           setShowServicesModal(false);
-                          router.push(`/user/request-service?serviceId=${service.id}`);
+                          router.push(`/user/request-service?serviceId=${service.id}&caretakerId=${selectedCaretakerForServices.caretakerId}`);
                         }}
                       >
                         Request Service

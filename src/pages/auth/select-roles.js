@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import Button from '@/components/shared/Button';
 
@@ -20,17 +20,26 @@ export default function SelectRole() {
 
   const ensureUserDocument = async () => {
     try {
-      await setDoc(doc(db, 'users', user.uid), {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      const updateData = {
         uid: user.uid,
         email: user.email,
-        role: '',
-        profile: {
+        updatedAt: new Date().toISOString()
+      };
+
+      // Only set profile fields if they don't exist yet or if auth has them
+      if (!userDocSnap.exists() || !userDocSnap.data()?.profile?.name) {
+        updateData.profile = {
           name: user.displayName || '',
           phone: '',
           photoURL: user.photoURL || '',
-          createdAt: new Date().toISOString()
-        }
-      }, { merge: true });
+          createdAt: userDocSnap.exists() ? userDocSnap.data().profile?.createdAt : new Date().toISOString()
+        };
+      }
+
+      await setDoc(userDocRef, updateData, { merge: true });
     } catch (error) {
       console.error('Error ensuring user document:', error);
     }

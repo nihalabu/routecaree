@@ -36,6 +36,9 @@ export default function Home() {
             <div className="flex items-center gap-6">
               {user && userProfile && userProfile.role && isFullyRegistered ? (
                 <>
+                  <span className="text-sm font-bold text-slate-300 hidden md:block px-2">
+                    {userProfile?.profile?.name || user?.email}
+                  </span>
                   <Link
                     href={userProfile.role === 'caretaker' ? '/caretaker' : '/user'}
                     className="text-sm font-bold text-slate-100 hover:text-white transition"

@@ -1,6 +1,6 @@
 // src/context/AuthContext.js
 import { createContext, useContext, useEffect, useState } from 'react';
-import { 
+import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -58,20 +58,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-      
+
       if (userDoc.exists()) {
         const profile = userDoc.data();
         setUserProfile(profile);
-        
+
         // If no role selected, redirect to complete registration
         if (!profile.role) {
           router.push('/auth/register');
           return result;
         }
-        
+
         // Check if profile is complete
         const isRegistered = await checkRegistrationStatus(result.user.uid, profile.role);
-        
+
         if (!isRegistered) {
           // Profile not complete, redirect to registration
           router.push('/auth/register');
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
         // User document doesn't exist, redirect to registration
         router.push('/auth/register');
       }
-      
+
       return result;
     } catch (error) {
       console.error('Login error:', error);
@@ -101,7 +101,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (email, password, name) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
+
+      // Update Firebase Auth profile
+      const { updateProfile } = await import('firebase/auth');
+      await updateProfile(result.user, { displayName: name });
+
       // Create basic user document
       await setDoc(doc(db, 'users', result.user.uid), {
         uid: result.user.uid,
@@ -143,10 +147,10 @@ export const AuthProvider = ({ children }) => {
   const updateUserProfile = async (updates) => {
     try {
       if (!user) return;
-      
+
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, updates, { merge: true });
-      
+
       setUserProfile(prev => ({
         ...prev,
         ...updates
