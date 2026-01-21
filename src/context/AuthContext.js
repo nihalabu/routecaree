@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkRegistrationStatus = async (userId, role) => {
+    // Only support 'user' (NRI) and 'caretaker' roles
     if (role === 'caretaker') {
       const q = query(collection(db, 'caretakers'), where('userId', '==', userId));
       const snapshot = await getDocs(q);
@@ -49,6 +50,7 @@ export const AuthProvider = ({ children }) => {
       const snapshot = await getDocs(q);
       return !snapshot.empty;
     }
+    // Invalid role - return false
     return false;
   };
 

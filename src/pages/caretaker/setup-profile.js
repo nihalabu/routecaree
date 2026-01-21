@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import Button from '@/components/shared/Button';
 
 export default function CaretakerProfileSetup() {
   const { user, userProfile } = useAuth();
@@ -16,7 +17,7 @@ export default function CaretakerProfileSetup() {
     serviceArea: '',
     experience: ''
   });
-  
+
   const [services, setServices] = useState([
     {
       serviceName: '',
@@ -29,16 +30,15 @@ export default function CaretakerProfileSetup() {
   ]);
 
   const generateCaretakerId = async () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let isUnique = false;
     let caretakerId = '';
-    
+
     while (!isUnique) {
       caretakerId = 'CT-';
-      for (let i = 0; i < 3; i++) caretakerId += letters.charAt(Math.floor(Math.random() * letters.length));
-      for (let i = 0; i < 3; i++) caretakerId += numbers.charAt(Math.floor(Math.random() * numbers.length));
-      
+      for (let i = 0; i < 6; i++) {
+        caretakerId += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
       const q = query(collection(db, 'caretakers'), where('caretakerId', '==', caretakerId));
       const snapshot = await getDocs(q);
       isUnique = snapshot.empty;
@@ -130,80 +130,87 @@ export default function CaretakerProfileSetup() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-12">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 overflow-hidden">
+    <div className="min-h-screen bg-slate-50 py-12 px-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100">
           {/* Header */}
-          <div className="bg-indigo-600 p-10 text-white">
-            <h1 className="text-3xl font-black mb-2">Build Your Business</h1>
-            <p className="text-indigo-100 opacity-90">Set up your profile to start receiving service requests.</p>
+          <div className="bg-slate-900 p-10 text-white relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800 opacity-50" />
+            <div className="relative z-10">
+              <h1 className="text-4xl font-black mb-2 text-white">Build Your Business</h1>
+              <p className="text-slate-400 font-medium text-lg">Set up your profile to start receiving service requests.</p>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-10 space-y-10">
+          <form onSubmit={handleSubmit} className="p-10 space-y-12">
             {/* Section 1: Identity */}
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">1</span>
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">Personal Details</h2>
+            <section className="space-y-8">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-black text-sm">01</span>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Personal Details</h2>
               </div>
-              
-              <div className="grid md:grid-cols-2 gap-6">
+
+              <div className="grid md:grid-cols-2 gap-8">
                 <Input label="Full Name" name="name" value={formData.name} onChange={handleChange} required />
                 <Input label="Phone Number" name="phone" type="tel" placeholder="+91 00000 00000" value={formData.phone} onChange={handleChange} required />
-                <div className="md:col-span-2">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Address</label>
-                    <textarea name="address" required value={formData.address} onChange={handleChange} rows="2" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition outline-none" />
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Work Address / Base Location</label>
+                  <textarea name="address" required value={formData.address} onChange={handleChange} rows="2" className="input-field resize-none h-auto" />
                 </div>
                 <Input label="City / Service Area" name="serviceArea" placeholder="e.g. Mumbai, Maharashtra" value={formData.serviceArea} onChange={handleChange} required />
-                <Input label="Years of Experience" name="experience" placeholder="e.g. 4 Years" value={formData.experience} onChange={handleChange} required />
+                <Input label="Professional Experience" name="experience" placeholder="e.g. 5+ Years in Plumbing" value={formData.experience} onChange={handleChange} required />
               </div>
             </section>
 
             <hr className="border-slate-100" />
 
             {/* Section 2: Services */}
-            <section>
-              <div className="flex items-center justify-between mb-6">
+            <section className="space-y-8">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">2</span>
-                    <h2 className="text-xl font-black text-slate-800 tracking-tight">Services Offered</h2>
+                  <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-black text-sm">02</span>
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Services Offered</h2>
                 </div>
-                <button type="button" onClick={() => setServices([...services, { serviceName: '', category: 'home_maintenance', description: '', price: '', duration: '', image: '' }])} className="text-indigo-600 font-bold text-sm hover:underline">
+                <button type="button" onClick={() => setServices([...services, { serviceName: '', category: 'home_maintenance', description: '', price: '', duration: '', image: '' }])} className="text-slate-600 font-black text-sm hover:text-slate-950 transition-colors uppercase tracking-widest">
                   + Add Service
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {services.map((service, index) => (
-                  <div key={index} className="relative p-6 bg-slate-50 rounded-2xl border border-slate-100 group">
+                  <div key={index} className="relative p-8 bg-slate-50 rounded-[2rem] border border-slate-100 animate-in zoom-in-95 duration-300">
                     {services.length > 1 && (
-                      <button type="button" onClick={() => setServices(services.filter((_, i) => i !== index))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                      <button type="button" onClick={() => setServices(services.filter((_, i) => i !== index))} className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition">
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                       </button>
                     )}
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <Input label="Service Name" value={service.serviceName} onChange={(e) => handleServiceChange(index, 'serviceName', e.target.value)} placeholder="e.g. Deep Cleaning" />
-                      <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-                        <select value={service.category} onChange={(e) => handleServiceChange(index, 'category', e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none">
-                            <option value="home_maintenance">Home Maintenance</option>
-                            <option value="parent_care">Parent Care</option>
-                            <option value="property_inspection">Property Inspection</option>
-                            <option value="other">Other</option>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <Input label="Service Title" value={service.serviceName} onChange={(e) => handleServiceChange(index, 'serviceName', e.target.value)} placeholder="e.g. Electrical Repair" />
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Category</label>
+                        <select value={service.category} onChange={(e) => handleServiceChange(index, 'category', e.target.value)} className="input-field appearance-none bg-white">
+                          <option value="home_maintenance">Home Maintenance</option>
+                          <option value="parent_care">Parent Care</option>
+                          <option value="property_inspection">Property Inspection</option>
+                          <option value="other">Other</option>
                         </select>
                       </div>
-                      <div className="md:col-span-2">
-                        <Input label="Description" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} />
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Description of Service</label>
+                        <textarea value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className="input-field resize-none h-auto" rows="3" placeholder="Explain what is included in this service..." />
                       </div>
-                      <Input label="Price (₹)" type="number" value={service.price} onChange={(e) => handleServiceChange(index, 'price', e.target.value)} />
-                      <Input label="Duration" value={service.duration} onChange={(e) => handleServiceChange(index, 'duration', e.target.value)} placeholder="e.g. 2 Hours" />
-                      
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Service Image</label>
-                        <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" onChange={(e) => handleImageUpload(index, e)} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100" />
-                            {service.image && <img src={service.image} className="w-12 h-12 rounded-lg object-cover border border-slate-200" alt="Preview" />}
+                      <Input label="Rate / Starting Price (₹)" type="number" value={service.price} onChange={(e) => handleServiceChange(index, 'price', e.target.value)} />
+                      <Input label="Estimated Duration" value={service.duration} onChange={(e) => handleServiceChange(index, 'duration', e.target.value)} placeholder="e.g. 1-2 Hours" />
+
+                      <div className="md:col-span-2 space-y-4">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Portfolio / Service Image</label>
+                        <div className="flex items-center gap-6">
+                          <label className="cursor-pointer px-6 py-3 bg-white border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-400 transition-colors text-sm font-bold text-slate-500">
+                            Upload Photo
+                            <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(index, e)} />
+                          </label>
+                          {service.image && <img src={service.image} className="w-16 h-16 rounded-xl object-cover ring-2 ring-slate-100 shadow-lg" alt="Preview" />}
                         </div>
                       </div>
                     </div>
@@ -212,13 +219,13 @@ export default function CaretakerProfileSetup() {
               </div>
             </section>
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 transition-all disabled:opacity-50"
+              className="w-full py-6 text-xl shadow-2xl shadow-slate-200"
             >
               {loading ? 'Processing...' : 'Launch My Profile'}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -226,14 +233,13 @@ export default function CaretakerProfileSetup() {
   );
 }
 
-// Helper Component for Inputs
 function Input({ label, ...props }) {
   return (
-    <div>
-      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{label}</label>
+    <div className="space-y-2">
+      <label className="text-[10px] font-black uppercase text-slate-500 ml-1">{label}</label>
       <input
         {...props}
-        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition outline-none text-slate-800 placeholder:text-slate-300"
+        className="input-field"
       />
     </div>
   );

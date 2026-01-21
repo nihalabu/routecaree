@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import Button from '@/components/shared/Button';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -36,17 +37,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 font-sans">
+    <div className="min-h-screen flex bg-slate-50 font-sans">
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center px-6 lg:px-20 xl:px-24 bg-white shadow-2xl z-10">
         <div className="max-w-md w-full">
           <div className="text-center lg:text-left">
-            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-4xl font-extrabold text-slate-900 tracking-tighter">
               Welcome back
             </h2>
-            <p className="mt-3 text-gray-500 text-lg">
+            <p className="mt-3 text-slate-500 text-lg">
               New to Route Care?{' '}
-              <Link href="/auth/signup" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors underline underline-offset-4">
+              <Link href="/auth/signup" className="font-semibold text-slate-700 hover:text-slate-900 transition-colors underline underline-offset-4">
                 Create an account
               </Link>
             </p>
@@ -64,7 +65,7 @@ export default function Login() {
           <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-1.5">
+                <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -73,13 +74,13 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-field" // Using the class defined in globals.css
+                  className="input-field"
                   placeholder="name@company.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">
+                <label htmlFor="password" className="block text-sm font-bold text-slate-700 mb-1.5">
                   Password
                 </label>
                 <input
@@ -88,7 +89,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field" // Using the class defined in globals.css
+                  className="input-field"
                   placeholder="••••••••"
                 />
               </div>
@@ -98,24 +99,24 @@ export default function Login() {
               <label className="flex items-center cursor-pointer group">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition cursor-pointer"
+                  className="h-4 w-4 text-slate-700 focus:ring-slate-500 border-slate-300 rounded transition cursor-pointer"
                 />
-                <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Remember me</span>
+                <span className="ml-2 text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Remember me</span>
               </label>
 
-              <Link href="/auth/forgot-password" hidden className="text-sm font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+              <Link href="/auth/forgot-password" hidden className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors">
                 Forgot password?
               </Link>
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2" // Using class from globals.css
+              className="w-full py-4 text-lg"
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-5 w-5 text-white mr-2" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
@@ -124,30 +125,32 @@ export default function Login() {
               ) : (
                 'Sign in to Dashboard'
               )}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
 
       {/* Right Side - Branding Overlay */}
       <div className="hidden lg:flex relative w-0 flex-1 bg-slate-900">
-        <div className="absolute inset-0 z-0 opacity-40">
-           {/* You can put a high-quality background image or pattern here */}
-           <div className="absolute inset-0 bg-gradient-to-br from-blue-700 to-indigo-900" />
+        <div className="absolute inset-0 z-0 opacity-100">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800" />
+          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
         </div>
-        
+
         <div className="relative z-10 flex flex-col items-center justify-center w-full px-20 text-white">
-          <div className="bg-blue-500/20 p-4 rounded-2xl backdrop-blur-md mb-8">
-             <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-             </svg>
+          <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl mb-10 border border-white/10 shadow-2xl">
+            <svg className="w-12 h-12 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
           </div>
-          <h1 className="text-5xl font-black mb-4 tracking-tight">Route Care</h1>
-          <p className="text-xl font-medium text-blue-100 mb-8 text-center max-w-md leading-relaxed">
+          <h1 className="text-6xl font-black mb-6 tracking-tighter text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+            Route<span className="text-cyan-400">Care</span>
+          </h1>
+          <p className="text-xl font-medium text-white mb-12 text-center max-w-md leading-relaxed opacity-95">
             Connecting NRIs with trusted home management and elderly care professionals.
           </p>
-          
-          <div className="grid grid-cols-3 gap-12 border-t border-white/20 pt-10 mt-2">
+
+          <div className="grid grid-cols-3 gap-12 border-t border-white/10 pt-12 mt-4 w-full max-w-lg">
             <StatBlock count="100+" label="Active Users" />
             <StatBlock count="50+" label="Caretakers" />
             <StatBlock count="500+" label="Tasks Done" />
@@ -158,12 +161,11 @@ export default function Login() {
   );
 }
 
-// Simple internal component for the branding stats
 function StatBlock({ count, label }) {
   return (
-    <div className="text-center">
-      <div className="text-3xl font-bold text-white">{count}</div>
-      <div className="text-xs font-semibold uppercase tracking-widest text-blue-200 mt-1">{label}</div>
+    <div className="text-center group">
+      <div className="text-3xl font-black text-white group-hover:scale-110 transition-transform duration-300">{count}</div>
+      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-200 mt-2 opacity-90">{label}</div>
     </div>
   );
 }

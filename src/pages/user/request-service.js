@@ -10,13 +10,13 @@ function RequestServiceContent() {
   const router = useRouter();
   const { serviceId } = router.query;
   const { user } = useAuth();
-  
+
   const [userData, setUserData] = useState(null);
   const [caretakerData, setCaretakerData] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     scheduledDate: '',
     scheduledTime: '10:00',
@@ -34,19 +34,19 @@ function RequestServiceContent() {
     try {
       const userQuery = query(collection(db, 'nriUsers'), where('userId', '==', user.uid));
       const userSnapshot = await getDocs(userQuery);
-      
+
       if (!userSnapshot.empty) {
         const userInfo = userSnapshot.docs[0].data();
         setUserData(userInfo);
         setFormData(prev => ({ ...prev, serviceAddress: userInfo.profile.propertyAddress }));
-        
+
         if (userInfo.linkedCaretakers?.length > 0) {
           const caretakerQuery = query(
             collection(db, 'caretakers'),
             where('caretakerId', '==', userInfo.linkedCaretakers[0])
           );
           const caretakerSnapshot = await getDocs(caretakerQuery);
-          
+
           if (!caretakerSnapshot.empty) {
             const caretakerInfo = caretakerSnapshot.docs[0].data();
             setCaretakerData(caretakerInfo);
@@ -106,14 +106,14 @@ function RequestServiceContent() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-12">
       <div className="max-w-4xl mx-auto px-6">
-        
+
         {/* Breadcrumb */}
         <button onClick={() => router.back()} className="group flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition mb-8 font-black text-xs uppercase tracking-widest">
           <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Services
         </button>
 
         <div className="grid lg:grid-cols-5 gap-10">
-          
+
           {/* Main Form Area */}
           <div className="lg:col-span-3 space-y-6">
             <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/50">
@@ -124,21 +124,21 @@ function RequestServiceContent() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preferred Date</label>
-                    <input 
-                      type="date" 
-                      required 
+                    <input
+                      type="date"
+                      required
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold"
                       value={formData.scheduledDate}
-                      onChange={(e) => setFormData({...formData, scheduledDate: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Arrival Time</label>
-                    <select 
+                    <select
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold appearance-none"
                       value={formData.scheduledTime}
-                      onChange={(e) => setFormData({...formData, scheduledTime: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
                     >
                       {["08:00 AM", "10:00 AM", "12:00 PM", "02:00 PM", "04:00 PM"].map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
@@ -147,30 +147,30 @@ function RequestServiceContent() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Property Address</label>
-                  <textarea 
-                    required 
+                  <textarea
+                    required
                     rows="3"
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold"
                     value={formData.serviceAddress}
-                    onChange={(e) => setFormData({...formData, serviceAddress: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, serviceAddress: e.target.value })}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Instructions for Caretaker</label>
-                  <textarea 
+                  <textarea
                     rows="4"
                     placeholder="e.g. Please check the garden pipes as well..."
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-bold"
                     value={formData.specialRequirements}
-                    onChange={(e) => setFormData({...formData, specialRequirements: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, specialRequirements: e.target.value })}
                   />
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={submitting}
-                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all disabled:opacity-50"
+                  className="w-full py-5 bg-slate-600 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-slate-700 hover:-translate-y-1 transition-all disabled:opacity-50"
                 >
                   {submitting ? "Sending Request..." : "Confirm Booking"}
                 </button>
@@ -182,9 +182,9 @@ function RequestServiceContent() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-indigo-900 rounded-[2.5rem] p-8 text-white sticky top-12 overflow-hidden shadow-2xl">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-              
+
               <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-300 mb-8">Summary</h3>
-              
+
               <div className="space-y-6 relative z-10">
                 <div>
                   <h4 className="text-2xl font-black mb-1">{selectedService?.serviceName}</h4>
@@ -202,9 +202,9 @@ function RequestServiceContent() {
                 </div>
 
                 <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
-                   <p className="text-[10px] font-black uppercase text-indigo-300 mb-2">Service Provider</p>
-                   <p className="font-bold text-lg">{caretakerData?.profile?.name}</p>
-                   <p className="text-xs opacity-60 font-medium">Expertise: {caretakerData?.profile?.experience}</p>
+                  <p className="text-[10px] font-black uppercase text-indigo-300 mb-2">Service Provider</p>
+                  <p className="font-bold text-lg">{caretakerData?.profile?.name}</p>
+                  <p className="text-xs opacity-60 font-medium">Expertise: {caretakerData?.profile?.experience}</p>
                 </div>
               </div>
             </div>

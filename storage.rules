@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check file size (max 10MB)
+    function isValidSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // Helper function to check if file is an image or video
+    function isValidFileType() {
+      return request.resource.contentType.matches('image/.*') || 
+             request.resource.contentType.matches('video/.*');
+    }
+    
+    // Service proof uploads (photos/videos of completed work)
+    match /service-proof/{userId}/{requestId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && 
+                     request.auth.uid == userId && 
+                     isValidSize() && 
+                     isValidFileType();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Service images (for service listings)
+    match /service-images/{userId}/{fileName} {
+      allow read: if true;  // Public read for service images
+      allow write: if isSignedIn() && 
+                     request.auth.uid == userId && 
+                     isValidSize() && 
+                     isValidFileType();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Profile pictures
+    match /profile-pictures/{userId}/{fileName} {
+      allow read: if true;  // Public read
+      allow write: if isSignedIn() && 
+                     request.auth.uid == userId && 
+                     isValidSize() && 
+                     request.resource.contentType.matches('image/.*');
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}
